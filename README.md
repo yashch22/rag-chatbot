@@ -73,7 +73,7 @@ rag-chatbot/
 │   │   └── ...            # Other chatbot modules
 │   ├── ...                # Other backend modules
 │   └── requirements.txt   # Backend dependencies
-├── frontend-bot/          # Next.js frontend application
+├── frontend/          # Next.js frontend application
 │   ├── app/               # Main application directory
 │   │   └── ...            # Frontend components and pages
 │   └── components/        # Reusable UI components
