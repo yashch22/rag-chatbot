@@ -1,0 +1,12 @@
+django
+djangorestframework
+django-cors-headers
+langchain
+langchain-community
+langchain-core
+psycopg2-binary
+python-dotenv
+langchain-google-genai
+psycopg
+pgvector
+pypdf

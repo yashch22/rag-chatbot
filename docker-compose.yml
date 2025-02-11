@@ -1,0 +1,91 @@
+version: "3.8"
+
+services:
+  postgres:
+    image: ${PGVECTOR_IMAGE}
+    container_name: pgvector-db-2
+    environment:
+      POSTGRES_USER: ${PG_USER}
+      POSTGRES_PASSWORD: ${PG_PASSWORD}
+      POSTGRES_DB: ${PG_DB}
+    ports:
+      - "6024:5432"
+    volumes:
+      - ./backend/app/init_db.sql:/docker-entrypoint-initdb.d/init_db.sql:ro
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - backend_network
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "${PG_USER}", "-d", "${PG_DB}"]
+      interval: 10s
+      retries: 5
+      timeout: 5s
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 4G
+
+  backend:
+    build:
+      context: ./backend  # Corrected build context to point to backend folder
+      dockerfile: Dockerfile
+    container_name: rag-backend-2
+    environment:
+      # - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+      - POSTGRES_USER=${PG_USER}
+      - POSTGRES_PASSWORD=${PG_PASSWORD}
+      - POSTGRES_DB=${PG_DB}
+      - POSTGRES_HOST=postgres
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - PGVECTOR_CONNECTION_STRING=${PGVECTOR_CONNECTION_STRING}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app  # Adjusted volume path to backend/app
+    networks:
+      - backend_network
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 2G
+    # healthcheck:
+    #   test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+    #   interval: 30s
+    #   timeout: 10s
+    #   retries: 3
+
+
+
+  frontend:
+    build:
+      context: ./frontend  # Path to your frontend directory
+      dockerfile: Dockerfile   # Assuming the Dockerfile is inside the frontend directory
+    container_name: frontend
+    ports:
+      - "3000:3000"  # Expose the Next.js app on port 3000
+    networks:
+      - backend_network
+    depends_on:
+      - backend  # Make sure backend is up before frontend starts
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 2G
+    environment:
+      - NEXT_PUBLIC_API_URL=http://backend:8000  # Assuming you want the frontend to communicate with backend via this URL
+
+
+
+volumes:
+  pgdata:
+
+networks:
+  backend_network:
+    driver: bridge
